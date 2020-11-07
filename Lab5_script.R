@@ -4,7 +4,11 @@
 ##To fill in this script, complete the code in places marked with -!!!-
 ##You will need to delete the -!!!- and replace with the needed code
 
-#Loading the required packages
+#You may need to install packages for this lab.
+#To do so, remove the hashtag on the next line and run that function.
+#install.packages(c("tidyverse","tmap","sf"))
+
+#Loading the required packages 
 library(tidyverse)
 library(tmap)
 library(sf)
