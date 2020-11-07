@@ -1,0 +1,214 @@
+---
+title: "Mapping Google Mobility data during COVID-19 using R"
+author: GEOG 2011
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r}
+#########################################################################
+#                                                                       #
+# To see this as a formatted webpage, click "Knit" on the top toolbar.  # 
+# The code will take a few seconds to render in a new popup window.     #
+# Alternatively, click on the html document in the project folder.      #
+#                                                                       #
+#########################################################################
+```
+
+This file gives you a walkthrough of how to use a coding language (R) to map out spatial data. We'll be mapping Google COVID-19 Community Mobility Reports data (https://www.google.com/covid19/mobility/) compiled by Kieran Healy. 
+
+During this COVID19 pandemic, Google created those reports to help public health officials. Those reports provide data on how visit frequency and length of stay change across different types of places such as retail and recreation, groceries and pharmacies, parks, transit stations, workplaces, and residential locations within a geographic area.The changes were measured compared to a baseline, the 5-week period Jan 3–Feb 6, 2020. Detailed information about this data can be found here: https://www.google.com/covid19/mobility/data_documentation.html?hl=en.\ 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Import required packages
+Many developers have built "packages" on the R platform that extend its functionality in some way. You need to also "call" these at the beginning of each project.
+```{r, message=FALSE, warning=FALSE， echo}
+library(tidyverse)
+library(tmap)
+library(sf)
+```
+
+## Getting started with R
+The first thing you should know about R is that it is an "object based" language, meaning that it works like this:
+
+```{r}
+greeting <- "hello"
+
+greeting
+```
+
+In this case, the greeting "object" holds just one piece of text--the word "hello". I assign the text to the object using the arrow symbol. I can then "call" the object by typing its name (greeting), which causes the system to return its contents. In this case, it simply prints the word "hello."
+
+If you're looking at this script in R, you should also see the greeting object over on the top, right hand corner of the page under the Environment tab.
+
+There's lots to say about objects, but we're going to skip some details for the purposes of this lab. Let's try something more complicated.
+
+```{r}
+mobility_county <- read_csv("data/google_mobility_county.csv")
+mobility_county$date_format <- as.Date(mobility_county$date, "%m/%d/%y")
+head(mobility_county)
+```
+
+This script reads in county-level mobility data stored in a CSV spreadsheet using "read_csv" function, storing it in an object called "mobility_county". 
+
+The dollar sign on line 53 (mobility_county$data) allows you to identify specific variables within these objects. In this case, we use as.Date() function to convert the date field from character to Date format in a new date_format variable. The original date field is in "month/date/year" format, so we specify "%m/%d/%y" in the function. When the script calls these two objects using the head function, just the first six lines of the tables are shown.
+
+The county-level data has 7 variables: 
+
+* country_region: Country or Region name
+* state: State name
+* county: County name
+* fips: US Census FIPS code
+* date: Date in yyyy-mm-dd format
+* type: Type of places. Places have 6 different types: retail, grocery (and pharmacy), parts, transit (hubs/stations), workplaces, and residential).
+* pct_diff: Percent change from baseline activity. A positive number means more activity. A negative one means less.
+
+We can narrow this data frame down to to a single state of United States using the "filter" function along with something called a "pipe", which looks like this: %>%. Here's the code:
+
+```{r}
+mobility_nc <- mobility_county %>%
+  filter(state == "North Carolina") 
+
+head(mobility_nc)
+```
+
+This code creates a new object called mobility_nc by taking our existing mobility object and filtering for those records where the state reads "North Carolina." Notice that the filter command requires you to use two equals signs to work. 
+
+We could also filter data further--looking at just workplaces in the most populated North Carolina county (Mecklenburg).
+
+```{r}
+mobility_nc_workplaces <- mobility_county %>%
+  filter(state == "North Carolina" & 
+           county=="Mecklenburg County" & 
+           type=="workplaces") 
+
+head(mobility_nc_workplaces)
+```
+
+Here, we’re asking the program to filter by "state," "county," and "type". Then we use the head function to look at the first six lines of the resulting table. You can also look at these data frames by clicking on them under the Environment tab in the upper right pane of RStudio. After you click the data variable, a new window for the data table will show up.
+
+## Simple plotting with ggplot2 package with R
+
+The table itself is interesting, but plot can give us a more intuitive view. Let's create a line graph of mobility change by date using the popular ggplot2 package, part of the tidyverse package you loaded earlier.There is a learning curve for using ggplot2, but once you grasp it, it provides a highly flexible way to visualize data.
+
+```{r, fig.cap = "Figure 1"}
+ggplot(data = mobility_nc_workplaces)+
+    geom_line(aes(x = date, y = pct_diff,group=county), colour="Blue")+
+    xlab("Date")+
+    ylab("% Mobility Change")
+```
+
+In the code above, we first specify the data as "mobility_nc_workplaces" in the ggplot() function. This specifies the dataset. We then define which type of graph we want--ggplot calls these "geom"s In this case, we want "geom_line"  layer functions since we are creating a basic line graph. 
+
+Within the geom_line function, we specify the variable for the x axis (date) and the value for y axis (pct_diff). To make the plot look nicer, we specify the labels for x and y axis using xlab() and ylab(). We can also specify a color for the line.  
+
+There are lots of other layer functions you can use for various visualization purpose, e.g. "geom_bar()" for bar chart (You can find more about ggplot 2 packages at https://ggplot2.tidyverse.org/reference/).
+
+Also note that it's easy to save these graphs in RStudio. In the "Plots" tab on the lower right, click on "Export" and then "Save as Image."
+
+## Mapping with R and sf
+At the top of this document you can see three packages called with the library function: tidyverse, sf, and tmap. The last two of these are for spatial data. 
+
+Using the st_read function in the sf package, I can load a list of U.S. counties.
+
+```{r}
+counties<-st_read("data/uscounties.gpkg", stringsAsFactors = FALSE) 
+```
+
+I can then map those counties using the tmap package in this way. Notice that tmap uses a plus sign rather than the pipe to connect functions.
+
+```{r, fig.cap = "Figure 4"}
+tm_shape(counties)+
+  tm_polygons()
+```
+
+In this function, tm_shape identifies the object to map and then tm_polygons says to show it as polygons. 
+
+It's easy to then create a choropleth map by identifying a variable in the second half of this function. In this case we'll use the total population variable (TOTPOP). You can also add a title using tm_layout.
+
+```{r, fig.cap = "Figure 5"}
+tm_shape(counties)+
+  tm_polygons("totalpop")+
+  tm_layout(main.title="Total county population")
+```
+
+This variable is skewed, and so the map looks pretty boring. Let's change to a quantile classification using the style parameter for tm_polygons:
+
+```{r, fig.cap = "Figure 6"}
+tm_shape(counties)+
+  tm_polygons("totalpop",style="quantile")+
+  tm_layout(main.title="Total county population")
+```
+
+Now let's back to our mobility data. Let's filter for county level mobility data of "workplaces" in North Carolina for April 2. 
+
+```{r}
+mobility_nc_workplaces_counties_0402 <- mobility_county %>%   
+  filter(state == "North Carolina",
+         type == "workplaces", 
+         date_format == "2020-04-02")
+```
+
+Both this mobility data and counties file share a census fips variable ("fips" for both object. Just like in QGIS, we can use that to join the two datasets. Here's how to connect the spatial data to the data for April 2. We will also filter for counties in North Carolina (G37 in the state_fips variable, which is a fips code for states)
+
+```{r}
+counties_nc_mobility_workplaces0402_sf <- counties %>%
+  inner_join(mobility_nc_workplaces_counties_0402) 
+```
+
+Now we can map mobility percent change on April 2 with jenks natural breaks classifications cheme using tm_shape function
+
+```{r, fig.cap = "Figure 7"}
+tm_shape(counties_nc_mobility_workplaces0402_sf, style="jenks") +
+  tm_polygons("pct_diff")
+```
+
+Lastly, you can make this map interactive. tmap has two modes--plotting for static maps or viewing for interactive ones (dispalyed in the lower right Viewer tab). You can switch by using tmap_mode:
+
+```{r, fig.cap = "Figure 8"}
+tmap_mode("view")
+
+tm_shape(counties_nc_mobility_workplaces0402_sf) +
+  tm_polygons("pct_diff",alpha=0.7,style="jenks")
+```
+
+This function includes an alpha parameter that makes the layer semi-transparent (0 is completely transparent, 1 is completely opaque). This map also uses Jenks natural breaks as a classification scheme. 
+
+## Going further with mapping
+
+We won't require the next part for this lab, but you can get pretty fancy making small multiples maps from the  examples below. Here's mobility change maps of North Carolina (in 3 different types of places: workplaces, residential, parks) on April 2 (Thursday, after NC Shelter-In-Place order).
+
+```{r, fig.cap = "Figure 10"}
+#filter the mobility data
+mobility_nc_counties = mobility_county %>% 
+  filter(state == "North Carolina",
+         type %in% c("workplaces","residential","parks"), 
+         date_format == "2020-04-02")
+
+#join the mobility data with counties data and filter for just NC states
+counties_nc_mobility <- counties %>%
+  inner_join(mobility_nc_counties)
+
+#create small multiple maps using fixed intervals classification for easy comparison using tm_facets.
+tmap_mode("plot")
+tm_shape(counties_nc_mobility)+
+  tm_polygons("pct_diff",title="% Difference",style = "fixed",
+              breaks = c(-61,-40,-20,0,20,40,66),
+              alpha = 0.5,
+              palette="-RdYlBu",popup.vars = "pct_diff")+
+  tm_layout(main.title="Mobility Pattern in NC, March 12 & April 02",
+            legend.outside = TRUE,
+            panel.label.size=1.5,
+            legend.title.size = 1.5,
+            legend.text.size = 0.5)+
+  tm_facets(by="type",free.scales.fill = TRUE,drop.NA.facets=TRUE,showNA=FALSE)+
+  tm_credits("Data: Google mobility (via covdata package)",
+             position=c("left","bottom"),size = 1)
+```
+
+Your lab this week will ask you to map changes to mobility in Georgia. Use this walkthrough as a guide for doing so.
