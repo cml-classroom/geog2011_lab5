@@ -98,7 +98,7 @@ The table itself is interesting, but plot can give us a more intuitive view. Let
 
 ```{r, fig.cap = "Figure 1"}
 ggplot(data = mobility_nc_workplaces)+
-    geom_line(aes(x = date, y = pct_diff,group=county), colour="Blue")+
+    geom_line(aes(x = date_format, y = pct_diff,group=county), colour="Blue")+
     xlab("Date")+
     ylab("% Mobility Change")
 ```

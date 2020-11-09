@@ -17,8 +17,8 @@ library(sf)
 mobility_county <- read_csv(-!!!-)
 mobility_county$date_format <- as.Date(mobility_county$date, "%m/%d/%y")
 
-#Now filter these data for for just workplaces
-mobility_ga_workplaces<- mobility_ga %>%
+#Now filter these data for for just workplaces in Georgia.
+mobility_ga_workplaces<- mobility %>%
   filter(-!!!-)
 
 #Now create a line graph of mobility change by date. In this graph, label x axis as "Date", 
@@ -47,13 +47,13 @@ mobility_ga_counties_0416 = mobility_county %>%
          date_format == "-!!!-")
 
 #Now we will read in the county boundary file. Fill in the name of the right function to do so. 
-counties<- -!!!- ("countyse_2014pop.gpkg", stringsAsFactors = FALSE) 
+counties<- -!!!- ("data/uscounties.gpkg", stringsAsFactors = FALSE) 
 
 #Join the mobility data to the county boundaries 
-counties_ga_mobility_0312 <- counties_ga %>%
+counties_ga_mobility_0312 <- counties %>%
   inner_join( -!!!- )
 
-counties_ga_mobility_0416 <- counties_ga %>%
+counties_ga_mobility_0416 <- counties %>%
   inner_join( -!!!- )
 
 
