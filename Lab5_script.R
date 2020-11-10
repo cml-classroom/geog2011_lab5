@@ -17,8 +17,8 @@ library(sf)
 mobility_county <- read_csv(-!!!-)
 mobility_county$date_format <- as.Date(mobility_county$date, "%m/%d/%y")
 
-#Now filter these data for for just workplaces in Georgia.
-mobility_ga_workplaces<- mobility %>%
+#Now filter these data for for just workplaces in Gwinnett County, Georgia.
+mobility_ga_workplaces<- mobility_county %>%
   filter(-!!!-)
 
 #Now create a line graph of mobility change by date. In this graph, label x axis as "Date", 
